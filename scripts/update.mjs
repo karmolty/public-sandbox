@@ -129,7 +129,7 @@ function buildHeadlines(dateStr, rand) {
       b: "Residents advised to secure fragile objects and prepare for hallway drag races." 
     },
     {
-      h: "Opinion: Your Cat Isn’t ‘Judging You’—They’re Just Doing Advanced Quality Assurance",
+      h: "Opinion: Your Cat Isn’t ‘Judging You’They’re Just Doing Advanced Quality Assurance",
       b: "‘We’re ensuring the humans remain trainable,’ sources close to the whiskers say." 
     }
   ];
@@ -141,10 +141,6 @@ function buildHeadlines(dateStr, rand) {
 }
 
 function renderHtml({ datePretty, meme, headlines }) {
-  const gifBadges = [
-    "https://media.giphy.com/media/3o6Zt481isNVuQI1l6/giphy.gif", // typewriter-ish
-    "https://media.giphy.com/media/l0HlQ7LRalQqdWfao/giphy.gif"  // spinning-ish
-  ];
 
   const hlHtml = headlines
     .map(
@@ -283,23 +279,6 @@ function renderHtml({ datePretty, meme, headlines }) {
 
     .story h3 { margin: 0 0 6px 0; }
     .story p { margin: 0 0 12px 0; }
-
-    .badges {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
-
-    .badge {
-      width: 88px;
-      height: 31px;
-      image-rendering: pixelated;
-      border: 2px solid var(--border);
-      background: #fff;
-    }
-
     footer {
       margin: 18px 0 30px;
       text-align: center;
@@ -321,21 +300,15 @@ function renderHtml({ datePretty, meme, headlines }) {
         <div class="date">${escapeHtml(datePretty)}</div>
       </div>
       <div class="marquee"><span>BREAKING: Experts confirm your cat was right all along • UPDATE: the bowl is 0.7% empty • DEVELOPING: box acquisition at an all-time high •</span></div>
-      <div class="badges">
-        <img class="badge" src="${gifBadges[0]}" alt="Totally normal 90s gif" />
-        <img class="badge" src="${gifBadges[1]}" alt="Another totally normal 90s gif" />
-        <span class="tiny">Tip jar: pay in treats.</span>
-      </div>
     </div>
 
     <div class="grid">
       <section class="panel">
-        <div class="hd">🐾 Today’s Featured Cat Meme (Above The Fold™)</div>
+        <div class="hd">🐾 Today’s Featured Cat Meme </div>
         <div class="bd">
           <img class="meme" src="assets/daily-meme.jpg" alt="Daily cat meme" />
           <p class="tiny">
-            Source: <a href="${escapeHtml(meme.permalink)}" target="_blank" rel="noreferrer">r/Catmemes</a>
-            — “${escapeHtml(meme.title)}”
+            Source: <a href="${escapeHtml(meme.permalink)}" target="_blank" rel="noreferrer">r/Catmemes</a>“${escapeHtml(meme.title)}”
           </p>
         </div>
       </section>
