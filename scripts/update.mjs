@@ -106,38 +106,80 @@ async function findDailyMeme() {
   };
 }
 
-function buildHeadlines(dateStr, rand) {
+async function getCatmemesRssEntries() {
+  const rssUrl = "https://www.reddit.com/r/Catmemes/top/.rss?t=day";
+  const res = await fetch(rssUrl, {
+    headers: { "user-agent": "TheDailyMewsBot/1.0 (GitHub Actions)" }
+  });
+  if (!res.ok) throw new Error(`fetch failed ${res.status} for ${rssUrl}`);
+  const xml = await res.text();
+
+  const entries = [];
+  const re = /<entry>([\s\S]*?)<\/entry>/g;
+  let m;
+  while ((m = re.exec(xml))) {
+    const entry = m[1];
+    const title = decodeXmlEntities((entry.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || "").trim();
+    const permalink = decodeXmlEntities((entry.match(/<link\s+href="([^"]+)"\s*\/>/) || [])[1] || "");
+    const author = decodeXmlEntities(
+      (
+        entry.match(/<author>[\s\S]*?<name>([\s\S]*?)<\/name>[\s\S]*?<\/author>/) || []
+      )[1] || ""
+    ).trim();
+
+    if (title && permalink) entries.push({ title, permalink, author });
+  }
+
+  return entries;
+}
+
+function normalizeTitle(s) {
+  // Keep it a little chaotic; it matches the retro vibe.
+  return String(s).replace(/\s+/g, " ").trim();
+}
+
+async function buildHeadlines(dateStr, rand, memeTitle) {
+  // Dynamic: based on whatever is actually trending on r/Catmemes today.
+  const entries = await getCatmemesRssEntries();
+
+  const titles = entries
+    .map((e) => e.title)
+    .filter(Boolean)
+    .map(normalizeTitle);
+
+  const distinct = [...new Set(titles)].filter((t) => t !== memeTitle);
+  const picked = pickN(distinct.length ? distinct : titles, 6, rand);
+
+  const t = (i, fallback) => picked[i] || memeTitle || fallback;
+
   const pool = [
     {
-      h: "Local Cat Announces New Economic Plan: ‘More Treats, Fewer Meetings.’",
-      b: "Analysts say the proposal is light on details but heavy on vibes and tuna." 
+      h: `BREAKING: “${t(0, "Cat Declares Independence From Gravity")}”`,
+      b: `Officials confirm this is being treated as a "meow-jor" development. (Filed: ${dateStr})`
     },
     {
-      h: "Breaking: Laser Pointer Spotted; National Productivity Immediately Collapses",
-      b: "Officials confirm the red dot remains ‘at large’ and ‘extremely tantalizing.’" 
+      h: `Markets React To: ${t(1, "Human Opens Can; Civilization Restored")}`,
+      b: "Treat futures up. Productivity down. The couch remains occupied."
     },
     {
-      h: "Study Finds 97% of ‘Important Emails’ Can Be Safely Ignored in Favor of Napping",
-      b: "Researchers call the results ‘purr-reviewed’ and ‘deeply relatable.’" 
+      h: `Opinion: ${t(2, "Your Keyboard Was Always A Heated Bed")} (And You Know It)`,
+      b: "Experts urge humans to stop taking it personally and start providing snacks."
     },
     {
-      h: "Government Issues New Guidance: If It Fits, It Sits",
-      b: "A spokesperson clarified this applies to boxes, laundry baskets, and your keyboard." 
+      h: `Science Desk Investigates: ${t(3, "The Mystery Of The 0.7% Empty Bowl")}`,
+      b: "The peer review process consisted of one stare, two slow blinks, and a decisive nap."
     },
     {
-      h: "Weather Alert: Chance of Zoomies After Midnight",
-      b: "Residents advised to secure fragile objects and prepare for hallway drag races." 
+      h: `Exclusive: Government Announces New Standard: “${t(4, "If It Fits, It Sits")}"`,
+      b: "Applies to boxes, laundry baskets, and your freshly folded clothes (especially those)."
     },
     {
-      h: "Opinion: Your Cat Isn’t ‘Judging You’They’re Just Doing Advanced Quality Assurance",
-      b: "‘We’re ensuring the humans remain trainable,’ sources close to the whiskers say." 
+      h: `Weather Alert: ${t(5, "Chance Of Zoomies After Midnight")}`,
+      b: "Residents advised to secure fragile objects and prepare for hallway drag races."
     }
   ];
 
-  const chosen = pickN(pool, 4, rand).map((x) => ({ ...x }));
-  // Sprinkle date for the “daily paper” feel.
-  chosen[0].b = `${chosen[0].b} (Filed: ${dateStr})`;
-  return chosen;
+  return pickN(pool, 4, rand).map((x) => ({ ...x }));
 }
 
 function renderHtml({ datePretty, meme, headlines }) {
@@ -348,7 +390,7 @@ async function main() {
   const meme = await findDailyMeme();
   await downloadToFile(meme.imageUrl, MEME_PATH);
 
-  const headlines = buildHeadlines(dateStr, rand);
+  const headlines = await buildHeadlines(dateStr, rand, meme.title);
 
   fs.mkdirSync(SITE_DIR, { recursive: true });
   const html = renderHtml({ datePretty, meme, headlines });
