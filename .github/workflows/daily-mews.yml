@@ -1,0 +1,54 @@
+name: Update The Daily Mews
+
+on:
+  schedule:
+    # Run hourly; script only publishes at ~06:xx America/Los_Angeles.
+    - cron: "17 * * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Force an update even if not 6AM LA time"
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: "daily-mews-update"
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Update site content
+        env:
+          FORCE_UPDATE: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.force == 'true') && '1' || '0' }}
+        run: npm run update
+
+      - name: Commit & push (if changed)
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git config user.name "daily-mews-bot"
+          git config user.email "daily-mews-bot@users.noreply.github.com"
+
+          git add -A
+          git commit -m "Daily Mews: update content"
+          git push

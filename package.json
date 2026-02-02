@@ -1,0 +1,11 @@
+{
+  "name": "public-sandbox",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "update": "node scripts/update.mjs"
+  },
+  "dependencies": {
+    "luxon": "^3.5.0"
+  }
+}
